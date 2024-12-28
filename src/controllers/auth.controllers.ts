@@ -18,12 +18,11 @@ import {
 
 export const registerUser = asyncHandler(
   async (req: Request, res: Response) => {
-    const { fullName, email, username, password } = req.body;
+    const { email, fullName, gender, password, phoneNumber } = req.body;
 
     const missingFields: string[] = [];
-    if (!fullName?.trim()) missingFields.push('fullName');
     if (!email?.trim()) missingFields.push('email');
-    if (!username?.trim()) missingFields.push('username');
+    if (!fullName?.trim()) missingFields.push('fullName');
     if (!password?.trim()) missingFields.push('password');
 
     if (missingFields.length > 0) {
@@ -40,7 +39,7 @@ export const registerUser = asyncHandler(
       });
     }
 
-    if (!validator.isValidPassword(password)) {
+    if (!validator.isStrongPassword(password)) {
       throw new ApiError({
         statusCode: 400,
         message:
@@ -49,28 +48,26 @@ export const registerUser = asyncHandler(
     }
 
     const existedUser: IUser | null = await User.findOne({
-      $or: [
-        { username: username.toLowerCase() },
-        { email: email.toLowerCase() },
-      ],
+      email: email.toLowerCase(),
     });
 
     if (existedUser) {
       throw new ApiError({
         statusCode: 409,
-        message: 'User with email or username already exists',
+        message: 'User with email already exists',
       });
     }
 
     const user: IUser | null = await User.create({
-      fullName,
       email,
+      fullName,
+      gender,
       password,
-      username: username.toLowerCase(),
+      phoneNumber,
     });
 
     const createdUser: IUser | null = await User.findById(user._id).select(
-      '-password -role -refreshToken',
+      '-password -role -refreshToken -isActive',
     );
 
     if (!createdUser) {
@@ -153,7 +150,7 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
   const { accessToken, refreshToken } = tokens;
 
   const loggedInUser: IUser | null = await User.findById(user._id).select(
-    '-password -role -refreshToken',
+    '-password -role -refreshToken -isActive',
   );
 
   res

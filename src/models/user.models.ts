@@ -5,12 +5,8 @@ import { IUser } from '../interfaces/user.interfaces.ts';
 
 const userSchema: Schema<IUser> = new Schema(
   {
-    username: {
+    avatar: {
       type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
     },
     email: {
       type: String,
@@ -24,24 +20,34 @@ const userSchema: Schema<IUser> = new Schema(
       required: true,
       trim: true,
     },
-    avatar: {
+    gender: {
       type: String,
+      enum: ['male', 'female'],
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    membership: {
+      type: String,
+      enum: ['basic', 'premium'],
+      default: 'basic',
     },
     password: {
       type: String,
       required: [true, 'Password is required'],
+    },
+    phoneNumber: {
+      type: String,
+      trim: true,
     },
     refreshToken: {
       type: String,
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
+      enum: ['member', 'librarian', 'admin'],
+      default: 'member',
     },
   },
   {
@@ -67,8 +73,6 @@ userSchema.methods.generateAccessToken = function (): string {
     {
       _id: this._id,
       email: this.email,
-      username: this.username,
-      fullName: this.fullName,
       role: this.role,
     },
     process.env.ACCESS_TOKEN_SECRET as string,

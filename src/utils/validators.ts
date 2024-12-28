@@ -4,7 +4,7 @@ export const isValidEmail = (email: string): boolean => {
   return validator.isEmail(email);
 };
 
-export const isValidPassword = (
+export const isStrongPassword = (
   password: string,
   options = {
     minLength: 8,
