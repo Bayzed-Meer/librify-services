@@ -66,9 +66,7 @@ export const registerUser = asyncHandler(
       phoneNumber,
     });
 
-    const createdUser: IUser | null = await User.findById(user._id).select(
-      '-password -role -refreshToken -isActive',
-    );
+    const createdUser: IUser | null = await User.findById(user._id);
 
     if (!createdUser) {
       throw new ApiError({
@@ -123,7 +121,7 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 
   const user: IUser | null = await User.findOne({
     email,
-  });
+  }).select('+password');
 
   if (!user) {
     throw new ApiError({ statusCode: 404, message: 'User does not exist' });
@@ -149,9 +147,7 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
   }
   const { accessToken, refreshToken } = tokens;
 
-  const loggedInUser: IUser | null = await User.findById(user._id).select(
-    '-password -role -refreshToken -isActive',
-  );
+  const loggedInUser: IUser | null = await User.findById(user._id);
 
   res
     .status(201)
@@ -175,14 +171,10 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
-  const _id: string = req?.user?._id;
-
-  if (!_id) {
-    throw new ApiError({ statusCode: 400, message: 'User not found' });
-  }
+  const userId = req.user._id;
 
   await User.findByIdAndUpdate(
-    _id,
+    userId,
     {
       $unset: {
         refreshToken: 1,
@@ -234,7 +226,9 @@ export const refreshAccessToken = asyncHandler(
       });
     }
 
-    const user: IUser | null = await User.findById(decodedToken?._id);
+    const user: IUser | null = await User.findById(decodedToken._id).select(
+      '+refreshToken',
+    );
 
     if (!user) {
       throw new ApiError({ statusCode: 401, message: 'User not found' });
@@ -283,8 +277,9 @@ export const refreshAccessToken = asyncHandler(
 export const changeCurrentPassword = asyncHandler(
   async (req: Request, res: Response) => {
     const { oldPassword, newPassword } = req.body;
+    const userId = req.user._id;
 
-    const user: IUser | null = await User.findById(req?.user?._id);
+    const user: IUser | null = await User.findById(userId).select('+password');
 
     if (!user) {
       throw new ApiError({ statusCode: 404, message: 'User not found' });
@@ -361,14 +356,7 @@ export const forgotPassword = asyncHandler(
 export const resetPassword = asyncHandler(
   async (req: Request, res: Response) => {
     const { password } = req.body;
-    const email = req?.user?.email;
-
-    if (!email) {
-      throw new ApiError({
-        statusCode: 400,
-        message: 'Email is required',
-      });
-    }
+    const { email } = req.user;
 
     if (!password) {
       throw new ApiError({
@@ -406,14 +394,7 @@ export const resetPassword = asyncHandler(
 
 export const verifyOtp = asyncHandler(async (req: Request, res: Response) => {
   const { otp } = req.body;
-  const email = req?.user?.email;
-
-  if (!email) {
-    throw new ApiError({
-      statusCode: 400,
-      message: 'Email is required',
-    });
-  }
+  const { email } = req.user;
 
   if (!otp) {
     throw new ApiError({
@@ -447,14 +428,7 @@ export const verifyOtp = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const resendOtp = asyncHandler(async (req: Request, res: Response) => {
-  const email = req?.user?.email;
-
-  if (!email) {
-    throw new ApiError({
-      statusCode: 400,
-      message: 'Email is required',
-    });
-  }
+  const { email } = req.user;
 
   await OTP.deleteOne({ email });
 

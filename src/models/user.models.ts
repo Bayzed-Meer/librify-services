@@ -27,6 +27,7 @@ const userSchema: Schema<IUser> = new Schema(
     isActive: {
       type: Boolean,
       default: true,
+      select: false,
     },
     membership: {
       type: String,
@@ -36,6 +37,7 @@ const userSchema: Schema<IUser> = new Schema(
     password: {
       type: String,
       required: [true, 'Password is required'],
+      select: false,
     },
     phoneNumber: {
       type: String,
@@ -43,11 +45,13 @@ const userSchema: Schema<IUser> = new Schema(
     },
     refreshToken: {
       type: String,
+      select: false,
     },
     role: {
       type: String,
       enum: ['member', 'librarian', 'admin'],
       default: 'member',
+      select: false,
     },
   },
   {
