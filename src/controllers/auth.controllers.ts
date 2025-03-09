@@ -9,12 +9,172 @@ import * as validator from '../utils/validators.ts';
 import { JwtPayload } from '../interfaces/jwt.interfaces.ts';
 import { IUser } from '../interfaces/user.interfaces.ts';
 import { generateOtp } from '../utils/otp-generator.ts';
-import { generateOtpHtmlTemplate, sendMail } from '../utils/nodemailer.ts';
+import { generateEmailHtmlTemplate, sendMail } from '../utils/nodemailer.ts';
 import { IOTP } from '../interfaces/otp-interfaces.ts';
 import {
   generateAccessAndRefreshTokens,
   generateResetPasswordToken,
 } from '../utils/token-generator.ts';
+
+// export const registerUser = asyncHandler(
+//   async (req: Request, res: Response) => {
+//     const { email, fullName, gender, password, phoneNumber } = req.body;
+
+//     const missingFields: string[] = [];
+//     if (!email?.trim()) missingFields.push('email');
+//     if (!fullName?.trim()) missingFields.push('fullName');
+//     if (!password?.trim()) missingFields.push('password');
+
+//     if (missingFields.length > 0) {
+//       throw new ApiError({
+//         statusCode: 400,
+//         message: `Required fields are missing: ${missingFields.join(', ')}`,
+//       });
+//     }
+
+//     if (!validator.isValidEmail(email)) {
+//       throw new ApiError({
+//         statusCode: 400,
+//         message: 'Invalid email address!',
+//       });
+//     }
+
+//     if (!validator.isStrongPassword(password)) {
+//       throw new ApiError({
+//         statusCode: 400,
+//         message:
+//           'Password must be at least 8 characters long, and contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+//       });
+//     }
+
+//     const existedUser: IUser | null = await User.findOne({
+//       email: email.toLowerCase(),
+//     });
+
+//     if (existedUser) {
+//       throw new ApiError({
+//         statusCode: 409,
+//         message: 'User with email already exists',
+//       });
+//     }
+
+//     // Delete existing OTP for the email if any
+//     await OTP.deleteOne({ email });
+//     const otp = generateOtp();
+//     await OTP.create({
+//       email,
+//       otp,
+//       verified: false,
+//       data: { fullName, gender, password, phoneNumber },
+//     });
+
+//     await sendMail({
+//       to: email,
+//       subject: 'Verify Your Account - OTP',
+//       html: generateEmailHtmlTemplate({
+//         message:
+//           'Use the OTP below to verify your email and complete registration:',
+//         otp,
+//       }),
+//     });
+
+//     res.status(200).json(
+//       new ApiResponse({
+//         statusCode: 200,
+//         data: {},
+//         message:
+//           'OTP sent successfully. Please verify to complete registration.',
+//       }),
+//     );
+//   },
+// );
+
+// export const verifyOtpAndRegister = asyncHandler(
+//   async (req: Request, res: Response) => {
+//     const { email, otp } = req.body;
+
+//     if (!otp || !email) {
+//       throw new ApiError({
+//         statusCode: 400,
+//         message: 'OTP and email are required',
+//       });
+//     }
+
+//     const otpRecord: IOTP | null = await OTP.findOne({ email });
+
+//     if (!otpRecord) {
+//       throw new ApiError({
+//         statusCode: 400,
+//         message: 'Invalid or expired OTP',
+//       });
+//     }
+
+//     const isOtpCorrect = await otpRecord.isOtpCorrect(otp);
+
+//     if (!isOtpCorrect) {
+//       throw new ApiError({ statusCode: 400, message: 'Invalid OTP' });
+//     }
+
+//     const { fullName, gender, password, phoneNumber } = otpRecord.data;
+
+//     const user: IUser | null = await User.create({
+//       email,
+//       fullName,
+//       gender,
+//       password,
+//       phoneNumber,
+//     });
+
+//     if (!user) {
+//       throw new ApiError({
+//         statusCode: 500,
+//         message: 'Something went wrong while creating the user',
+//       });
+//     }
+
+//     await OTP.deleteOne({ email });
+
+//     const createdUser: IUser | null = await User.findById(user._id);
+
+//     if (!createdUser) {
+//       throw new ApiError({
+//         statusCode: 500,
+//         message: 'Something went wrong while registering the user',
+//       });
+//     }
+
+//     const tokens: { accessToken: string; refreshToken: string } | null =
+//       await generateAccessAndRefreshTokens(createdUser._id);
+
+//     if (!tokens) {
+//       throw new ApiError({
+//         statusCode: 500,
+//         message: 'Failed to generate tokens',
+//       });
+//     }
+//     const { accessToken, refreshToken } = tokens;
+
+//     res
+//       .status(201)
+//       .cookie('accessToken', accessToken, {
+//         httpOnly: true,
+//         secure: true,
+//       })
+//       .cookie('refreshToken', refreshToken, {
+//         httpOnly: true,
+//         secure: true,
+//         sameSite: 'strict',
+//         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+//       })
+//       .json(
+//         new ApiResponse({
+//           statusCode: 200,
+//           data: { createdUser, accessToken, refreshToken },
+//           message: 'User registered Successfully',
+//         }),
+//       );
+//   },
+// );
 
 export const registerUser = asyncHandler(
   async (req: Request, res: Response) => {
@@ -330,7 +490,11 @@ export const forgotPassword = asyncHandler(
     await sendMail({
       to: email,
       subject: 'Your Password Reset OTP',
-      html: generateOtpHtmlTemplate(otp),
+      html: generateEmailHtmlTemplate({
+        message:
+          'We received a request to reset your password. Use the OTP below:',
+        otp,
+      }),
     });
 
     const resetPasswordToken = await generateResetPasswordToken(email);
@@ -441,8 +605,11 @@ export const resendOtp = asyncHandler(async (req: Request, res: Response) => {
 
   await sendMail({
     to: email,
-    subject: 'Your Password Reset OTP',
-    html: generateOtpHtmlTemplate(otp),
+    subject: 'Your OTP Code',
+    html: generateEmailHtmlTemplate({
+      message: 'Here is your OTP code to verify your account.',
+      otp,
+    }),
   });
 
   res.status(200).json(

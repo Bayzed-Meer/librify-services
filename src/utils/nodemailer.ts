@@ -22,7 +22,13 @@ export const sendMail = async (options: MailOptions): Promise<void> => {
   }
 };
 
-export const generateOtpHtmlTemplate = (otp: string): string => `
+export const generateEmailHtmlTemplate = ({
+  message,
+  otp,
+}: {
+  message: string;
+  otp?: string;
+}): string => `
   <!DOCTYPE html>
   <html>
     <head>
@@ -83,13 +89,16 @@ export const generateOtpHtmlTemplate = (otp: string): string => `
     <body>
       <div class="email-container">
         <div class="email-header">
-          <h1>${process.env.COMPANY_NAME} - Password Reset Request</h1>
+          <h1>${process.env.COMPANY_NAME} - Notification</h1>
         </div>
         <div class="email-body">
-          <p>Dear user,</p>
-          <p>We received a request to reset your password. Please use the following OTP to complete the process:</p>
-          <div class="otp-box">${otp}</div>
-          <p>This OTP will expire in <strong>5 minutes</strong>. If you did not request a password reset, please ignore this email.</p>
+          <p>${message}</p>
+          ${
+            otp
+              ? `<div class="otp-box">${otp}</div>
+                 <p>This OTP will expire in <strong>5 minutes</strong>.</p>`
+              : ''
+          }
           <p>Thank you,<br>The Support Team</p>
         </div>
         <div class="email-footer">

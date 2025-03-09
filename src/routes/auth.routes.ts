@@ -9,6 +9,8 @@ const router: Router = Router();
 
 // POST: /api/v1/auth/register
 router.route('/register').post(authController.registerUser);
+// POST: /api/v1/auth/verify-otp-register (Verify OTP & create user)
+// router.route('/verify-otp-register').post(authController.verifyOtpAndRegister);
 // POST: /api/v1/auth/login
 router.route('/login').post(authController.loginUser);
 // POST: /api/v1/auth/logout
