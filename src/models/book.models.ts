@@ -20,20 +20,16 @@ const bookSchema: Schema<IBook> = new Schema(
       type: String,
       required: true,
     },
-    publication_year: {
+    publicationYear: {
       type: Number,
       required: true,
     },
-    status: {
-      type: String,
-      required: true,
-    },
-    rfid_tag: {
+    rfidTag: {
       type: String,
       required: true,
       unique: true,
     },
-    is_premium: {
+    isPremium: {
       type: Boolean,
       required: true,
     },
@@ -49,11 +45,7 @@ const bookSchema: Schema<IBook> = new Schema(
       type: String,
       required: true,
     },
-    subjects: {
-      type: [String],
-      required: true,
-    },
-    file_link: {
+    fileLink: {
       type: String,
       required: true,
     },
