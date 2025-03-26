@@ -4,61 +4,84 @@ import { Book } from '../models/book.models.ts';
 import { ApiError } from '../utils/api-error.ts';
 import { ApiResponse } from '../utils/api-response.ts';
 import { IBook } from '../interfaces/book.interfaces.ts';
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from '../utils/cloudinary.ts';
 
-// Create a new book
 export const createBook = asyncHandler(
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const {
-      bookId,
-      title,
       author,
-      isbn,
-      genre,
-      publicationYear,
-      status,
-      rfidTag,
-      isPremium,
-      publisher,
-      language,
-      edition,
-      subjects,
-      fileLink,
-      quantity,
       availability,
+      edition,
+      genre,
+      isbn,
+      isPremium,
+      language,
+      publicationYear,
+      publisher,
+      quantity,
+      rfidTag,
+      title,
     } = req.body;
 
-    const newBook: IBook = new Book({
-      bookId,
-      title,
-      author,
-      isbn,
-      genre,
-      publicationYear,
-      status,
-      rfidTag,
-      isPremium,
-      publisher,
-      language,
-      edition,
-      subjects,
-      fileLink,
-      quantity,
-      availability,
-    });
+    let { image, file } = req.body;
 
-    await newBook.save();
+    image = await uploadOnCloudinary(image);
 
-    res.status(201).json(
-      new ApiResponse({
-        statusCode: 201,
-        data: newBook,
-        message: 'Book created successfully',
-      }),
-    );
+    if (!image) {
+      throw new ApiError({
+        statusCode: 500,
+        message: 'Failed to create book. Please try again.',
+      });
+    }
+
+    if (file) {
+      file = await uploadOnCloudinary(file);
+      if (!file) {
+        throw new ApiError({
+          statusCode: 500,
+          message: 'Failed to creating book. Please try again.',
+        });
+      }
+    }
+
+    try {
+      const newBook: IBook = new Book({
+        author,
+        availability,
+        edition,
+        file: file?.url ?? '',
+        genre,
+        image: image.url,
+        isbn,
+        isPremium,
+        language,
+        publicationYear,
+        publisher,
+        quantity,
+        rfidTag,
+        title,
+      });
+
+      await newBook.save();
+
+      res.status(201).json(
+        new ApiResponse({
+          statusCode: 201,
+          data: newBook,
+          message: 'Book created successfully',
+        }),
+      );
+    } catch (error) {
+      await deleteFromCloudinary(image.public_id);
+      if (file) await deleteFromCloudinary(file.public_id);
+      next(error);
+    }
   },
 );
 
-// Get all books
 export const getAllBooks = asyncHandler(
   async (_req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const books: IBook[] = await Book.find();
@@ -73,7 +96,6 @@ export const getAllBooks = asyncHandler(
   },
 );
 
-// Get a single book by ID
 export const getBookById = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     const { id } = req.params;
@@ -111,7 +133,7 @@ export const updateBook = asyncHandler(
       language,
       edition,
       subjects,
-      fileLink,
+      file,
       quantity,
       availability,
     } = req.body;
@@ -132,7 +154,7 @@ export const updateBook = asyncHandler(
         language,
         edition,
         subjects,
-        fileLink,
+        file,
         quantity,
         availability,
       },

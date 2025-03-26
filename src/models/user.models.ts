@@ -51,7 +51,6 @@ const userSchema: Schema<IUser> = new Schema(
       type: String,
       enum: ['member', 'librarian', 'admin'],
       default: 'member',
-      select: false,
     },
   },
   {

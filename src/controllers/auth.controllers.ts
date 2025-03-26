@@ -226,7 +226,9 @@ export const registerUser = asyncHandler(
       phoneNumber,
     });
 
-    const createdUser: IUser | null = await User.findById(user._id);
+    const createdUser: IUser | null = await User.findById(user._id).select(
+      '-role',
+    );
 
     if (!createdUser) {
       throw new ApiError({
@@ -307,7 +309,9 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
   }
   const { accessToken, refreshToken } = tokens;
 
-  const loggedInUser: IUser | null = await User.findById(user._id);
+  const loggedInUser: IUser | null = await User.findById(user._id).select(
+    '-role',
+  );
 
   res
     .status(201)

@@ -9,8 +9,7 @@ export const generateAccessAndRefreshTokens = async (
   userId: mongoose.Types.ObjectId,
 ): Promise<{ accessToken: string; refreshToken: string } | null> => {
   try {
-    const user: IUser | null = await User.findById(userId);
-
+    const user: IUser | null = await User.findById(userId).select('+role');
     if (!user) {
       return null;
     }

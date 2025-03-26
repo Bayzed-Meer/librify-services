@@ -1,6 +1,6 @@
 import mongoose, { Model, Schema } from 'mongoose';
-import { IOTP } from '../interfaces/otp-interfaces.ts';
 import bcrypt from 'bcryptjs';
+import { IOTP } from '../interfaces/otp-interfaces.ts';
 
 const OTPSchema: Schema<IOTP> = new Schema({
   email: { type: String, required: true, unique: true },
